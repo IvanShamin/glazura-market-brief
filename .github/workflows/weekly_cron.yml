@@ -31,8 +31,8 @@ jobs:
               prompt_system = open("prompt_system.txt").read()
               prompt_run = open("prompt_run.txt").read().replace("[MONDAY DATE]", today.strftime("%d %b %Y")).replace("[DATE RANGE: Mon–Sun prior]", f"{last_mon} – {last_sun}")
     
-              openai_client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-              resp = openai_client.chat.completions.create(
+              openai.api_key = os.environ["OPENAI_API_KEY"]
+              resp = openai.chat.completions.create(
                   model="gpt-4o-mini",
                   messages=[
                       {"role":"system","content":prompt_system},
@@ -62,4 +62,5 @@ jobs:
           git add docs/brief.html
           git commit -m "Weekly brief $(date -u +'%Y-%m-%d')" || echo "No changes"
           git push
+
 
