@@ -1,4 +1,4 @@
-      - name: Generate brief via OpenAI
+ name: Generate brief via OpenAI
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
