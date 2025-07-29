@@ -9,6 +9,6 @@ jobs:
       - name: Test heredoc
         run: |
           cat <<EOF > test.txt
-Hello Ivan
-EOF
+          Hello Ivan
+          EOF
           cat test.txt
