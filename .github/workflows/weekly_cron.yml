@@ -1,3 +1,20 @@
+name: Weekly Glazura Brief
+on:
+  schedule:
+    - cron: '30 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          pip install --quiet openai==1.30 markdownify
+
       - name: Generate brief via OpenAI
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -38,3 +55,10 @@ html_body = f"""
 with open("docs/brief.html","w") as f: f.write(html_body)
 PY
 
+      - name: Commit & push
+        run: |
+          git config user.name  "glazura-bot"
+          git config user.email "bot@example.com"
+          git add docs/brief.html
+          git commit -m "Weekly brief $(date -u +'%Y-%m-%d')" || echo "No changes"
+          git push
