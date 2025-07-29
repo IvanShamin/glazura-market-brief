@@ -1,4 +1,4 @@
-name: Test YAML Only
+name: Test Heredoc
 on:
   workflow_dispatch:
 
@@ -6,7 +6,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Say hello
+      - name: Test heredoc
         run: |
-          echo "Hello Ivan"
-
+          cat <<EOF > test.txt
+Hello Ivan
+EOF
+          cat test.txt
