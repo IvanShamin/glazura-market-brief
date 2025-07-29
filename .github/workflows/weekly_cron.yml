@@ -1,1 +1,65 @@
+name: Weekly Glazura Brief
+on:
+  schedule:
+    - cron:  '30 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -qq
+        pip install --quiet openai==1.30 markdownify
+
+    - name: Generate brief via OpenAI
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        python - <<'PY'
+import os, re, html
+from datetime import date, timedelta
+import openai
+
+today = date.today()
+last_mon = today - timedelta(days=(today.weekday()+7))
+last_sun = last_mon + timedelta(days=6)
+
+prompt_system = open("prompt_system.txt").read()
+prompt_run    = open("prompt_run.txt").read().replace("[MONDAY DATE]", today.strftime("%d %b %Y")).replace("[DATE RANGE: Mon–Sun prior]", f"{last_mon} – {last_sun}")
+
+openai_client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+resp = openai_client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role":"system","content":prompt_system},
+        {"role":"user","content":prompt_run}
+    ],
+    temperature=0.3, max_tokens=2400
+)
+brief_md = resp.choices[0].message.content
+short_cz = re.search(r"Shrnutí v češtině[^\n]*\n(.*)", brief_md, re.S).group(1).strip()
+bullets  = re.findall(r"Executive.*?\n(?:•|\-)\s(.*?)\n", brief_md, re.S)
+html_body = f"""
+<!DOCTYPE html><html lang="cs"><meta charset="utf-8">
+<style>body{{font:18px/1.3 Arial,Helvetica,sans-serif;}}</style>
+<body>
+<h2>Glazura Market Watch<br><small>{last_mon} – {last_sun}</small></h2>
+<ul>{"".join(f"<li>{html.escape(b)}</li>" for b in bullets[:5])}</ul>
+<p>{html.escape(short_cz)}</p>
+</body></html>
+"""
+with open("docs/brief.html","w") as f: f.write(html_body)
+PY
+
+    - name: Commit & push
+      run: |
+        git config user.name  "glazura-bot"
+        git config user.email "bot@example.com"
+        git add docs/brief.html
+        git commit -m "Weekly brief $(date -u +'%Y-%m-%d')" || echo "No changes"
+        git push
 # placeholder
